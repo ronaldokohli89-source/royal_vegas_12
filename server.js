@@ -1,21 +1,22 @@
 const { initializeApp } = require("firebase/app");
 const { getDatabase, ref, update, get, child, set, runTransaction, push } = require("firebase/database");
-const express = require('express'); // REQUIRED for UptimeRobot
+const express = require('express');
 
-// --- 1. FIREBASE CONFIGURATION (UPDATED) ---
+
+// server.js - Update Section 1
 const firebaseConfig = {
-  apiKey: "AIzaSyD3ZS840bR1I1Ygu_F0gFZNJsq1p87PUTs",
-  authDomain: "spin-dcf00.firebaseapp.com",
-  databaseURL: "https://spin-dcf00-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "spin-dcf00",
-  storageBucket: "spin-dcf00.firebasestorage.app",
-  messagingSenderId: "242677807014",
-  appId: "1:242677807014:web:269038619c45be1d684167"
+  apiKey: "AIzaSyAuaE-ZsqFLnYUrGNF2VaIeDdzrDA-mVyE",
+  authDomain: "id-spin.firebaseapp.com",
+  databaseURL: "https://id-spin-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "id-spin",
+  storageBucket: "id-spin.firebasestorage.app",
+  messagingSenderId: "968364255642",
+  appId: "1:968364255642:web:216707fa28f7f351927223"
 };
 
-// Initialize Firebase
+// --- INITIALIZE FIREBASE & DB ---
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app); // This connects the database logic to your app
+const db = getDatabase(app); // This defines 'db' so your functions can use it
 
 // --- 2. GAME SETTINGS ---
 const CYCLE_TIME = 180; // 3 Minutes
@@ -191,35 +192,27 @@ async function checkDailyReset() {
     }
 }
 
-// --- 6. RENDER DEPLOYMENT SERVER ---
+/// --- 6. RENDER DEPLOYMENT SERVER ---
 const appServer = express();
 const port = process.env.PORT || 3000;
+const path = require('path'); // Required to map file directories
 
-appServer.get('/', (req, res) => {
+// 1. Tell Express to serve all static HTML/CSS/JS files from this directory
+appServer.use(express.static(__dirname));
+
+// 2. Move your status message to a specific /ping route (Great for UptimeRobot)
+appServer.get('/ping', (req, res) => {
     res.send(`Royal Vegas Game Server is RUNNING. <br>Status: ${status} <br>Timer: ${timer}`);
+});
+
+// 3. Redirect the root URL (/) directly to your game's login or index page
+appServer.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 appServer.listen(port, () => {
     console.log(`🚀 HTTP Server listening on port ${port}`);
+    console.log(`🌐 Game URL: http://localhost:${port}`);
+    console.log(`📊 IDs URL:  http://localhost:${port}/ids.html`);
+    console.log(`⚙️  Admin URL: http://localhost:${port}/admin.html`);
 });
-
-// --- 7. SELF-PING STRATEGY ---
-const https = require('https'); 
-const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
-
-if (RENDER_EXTERNAL_URL) {
-    console.log("⏰ Keep-Alive Activated for:", RENDER_EXTERNAL_URL);
-    setInterval(() => {
-        https.get(RENDER_EXTERNAL_URL, (res) => {
-            if (res.statusCode === 200) {
-                console.log("⚡ Keep-Alive Ping Successful");
-            } else {
-                console.error("⚠️ Keep-Alive Ping Failed:", res.statusCode);
-            }
-        }).on('error', (e) => {
-            console.error("⚠️ Keep-Alive Ping Error:", e.message);
-        });
-    }, 14 * 60 * 1000);
-} else {
-    console.log("⚠️ RENDER_EXTERNAL_URL not found. Self-ping inactive.");
-}
